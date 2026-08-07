@@ -1,0 +1,30 @@
+# Dependencies
+node_modules/
+
+# Secrets — never commit
+.env
+.env.local
+*.pem
+*firebase-adminsdk*
+.firebaseAdmin.js
+
+# Build output
+dist/
+build/
+.vercel
+
+# Firebase local cache
+.firebase/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Dataconnect
+.dataconnect
