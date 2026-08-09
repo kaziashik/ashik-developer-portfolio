@@ -3,7 +3,7 @@
 
 @plugin "daisyui/theme" {
   name: "lightMode";
-  default: true;
+  default: false;
   prefersdark: false;
   color-scheme: light;
   --color-base-100: oklch(98% 0.004 90);
@@ -24,7 +24,7 @@
 
 @plugin "daisyui/theme" {
   name: "darkMode";
-  default: false;
+  default: true;
   prefersdark: true;
   color-scheme: dark;
   --color-base-100: oklch(15% 0.006 270);
@@ -99,12 +99,17 @@ body {
     -webkit-backdrop-filter: blur(12px);
   }
   .section-spacing {
-    padding-block: 2.5rem;
+    padding-block: 3.5rem;
   }
   @media (min-width: 768px) {
     .section-spacing {
-      padding-block: 3rem;
+      padding-block: 5rem;
     }
+  }
+  .page-container {
+    max-width: 72rem;
+    margin-inline: auto;
+    padding-inline: 1.5rem;
   }
   .hero-intro-label {
     font-family: var(--font-mono);
@@ -155,7 +160,7 @@ body {
   .hero-photo-offset {
     position: absolute;
     right: -1.5rem;
-    top: 1rem;
+    top: 0.65rem;
     height: 100%;
     width: 100%;
     max-width: 420px;
@@ -183,22 +188,29 @@ body {
   }
   .hero-photo-badge {
     position: absolute;
-    bottom: 1.25rem;
-    left: 1.25rem;
+    right: 0.9rem;
+    bottom: 2.4rem;
+    left: auto;
+    top: auto;
     z-index: 20;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
-    border: 1px solid var(--color-base-300);
-    background: color-mix(in oklch, var(--color-base-100) 92%, transparent);
+    max-width: calc(100% - 1.5rem);
+    border: 1px solid color-mix(in oklch, var(--color-primary) 28%, var(--color-base-300));
+    background: color-mix(in oklch, var(--color-base-100) 90%, transparent);
     backdrop-filter: blur(8px);
-    padding: 0.35rem 0.75rem;
+    padding: 0.4rem 0.7rem;
     font-family: var(--font-mono);
     font-size: 9px;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: var(--color-base-content);
+    letter-spacing: 0.08em;
+    text-transform: none;
+    color: color-mix(in oklch, var(--color-base-content) 72%, var(--color-primary));
     box-shadow: 0 4px 12px color-mix(in oklch, var(--color-base-content) 8%, transparent);
+  }
+  .hero-photo-badge-prompt {
+    color: var(--color-primary);
+    flex-shrink: 0;
   }
   .cursor-blink {
     animation: cursorBlink 1.2s step-end infinite;

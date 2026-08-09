@@ -28,9 +28,7 @@ const projects = [
       'Role: Solo full-stack — built Next.js frontend and Express/Prisma/PostgreSQL backend; integrated Stripe and REST APIs.',
       'API: https://rentnestbackend.vercel.app/',
     ],
-    imageUrls: [
-      'https://s0.wp.com/mshots/v1/https%3A%2F%2Frentnest-frontend-theta.vercel.app%2F?w=1280',
-    ],
+    imageUrls: ['https://ashikportfolio-auth.web.app/projects/rentnest.jpg'],
     links: {
       github: 'https://github.com/kaziashik/rentnest_frontend-',
       live: 'https://rentnest-frontend-theta.vercel.app/',
@@ -57,9 +55,7 @@ const projects = [
       'Role: Solo full-stack — built React/Vite frontend and Express/MongoDB API; Firebase Auth + Stripe integration.',
       'API: https://zap-shift-server-delta-smoky.vercel.app/',
     ],
-    imageUrls: [
-      'https://s0.wp.com/mshots/v1/https%3A%2F%2Fzap-shift-737f5.web.app%2F?w=1280',
-    ],
+    imageUrls: ['https://ashikportfolio-auth.web.app/projects/zapshift.jpg'],
     links: {
       github: 'https://github.com/kaziashik/zap-shift',
       live: 'https://zap-shift-737f5.web.app/',
@@ -86,9 +82,7 @@ const projects = [
       'Role: Solo full-stack — built Next.js frontend and Express/Prisma/PostgreSQL backend; Stripe, Google Sign-In, and role-based dashboards.',
       'API: https://gareup.vercel.app',
     ],
-    imageUrls: [
-      'https://s0.wp.com/mshots/v1/https%3A%2F%2Fgearupfronted.vercel.app%2F?w=1280',
-    ],
+    imageUrls: ['https://ashikportfolio-auth.web.app/projects/gearup.jpg'],
     links: {
       github: 'https://github.com/kaziashik/GearUp',
       live: 'https://gearupfronted.vercel.app',

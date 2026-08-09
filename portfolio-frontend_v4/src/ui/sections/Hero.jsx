@@ -17,31 +17,10 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
 }
 
-function getIntroParagraphs(summary) {
-  const fallback = [
-    <>
-      My areas of interest include{' '}
-      <strong className="font-semibold text-base-content">full-stack development</strong>, React, Node.js, and
-      building <strong className="font-semibold text-base-content">scalable web applications</strong>.
-    </>,
-    <>
-      With a <strong className="font-semibold text-base-content">detail-oriented focus</strong>, I enjoy creating
-      clean, efficient solutions that improve performance and user experience.
-    </>,
+function getIntroParagraphs() {
+  return [
+    'MERN Stack developer building modern, responsive, and scalable web apps with React, Next.js, Node.js, Express.js, and Prisma — focused on clean UX and solid backend systems.',
   ]
-
-  if (!summary?.trim()) return fallback
-
-  const blocks = summary.trim().split(/\n{2,}/).map((p) => p.replace(/\n/g, ' ').trim()).filter(Boolean)
-  if (blocks.length >= 2) return blocks.slice(0, 2)
-
-  const sentences = summary.trim().match(/[^.!?]+[.!?]+/g) || [summary.trim()]
-  if (sentences.length >= 2) {
-    const mid = Math.ceil(sentences.length / 2)
-    return [sentences.slice(0, mid).join(' '), sentences.slice(mid).join(' ')]
-  }
-
-  return [summary.trim(), fallback[1]]
 }
 
 function HeroPhoto({ image, name, isAdmin, onUpdateImage, variant = 'desktop' }) {
@@ -73,7 +52,7 @@ function HeroPhoto({ image, name, isAdmin, onUpdateImage, variant = 'desktop' })
           </button>
         )}
         <span className="hero-photo-badge">
-          <span className="text-secondary">&gt;_</span> Software Developer
+          <span className="hero-photo-badge-prompt">&gt;_</span> Full stack software developer
         </span>
       </div>
     </div>
@@ -89,13 +68,13 @@ export default function Hero() {
 
   const name = profile?.name || 'Ashik'
   const firstName = name.split(' ')[0] || name
-  const [introP1, introP2] = getIntroParagraphs(profile?.researchSummary)
+  const [intro] = getIntroParagraphs()
   const image = optimizeImageUrl(profile?.profileImageUrl, { width: 500 }) || fallbackImage
-  const heroSkills = [...new Set((profile?.developmentSkills || []).flatMap((group) => group.items || []))]
+  const heroSkills = [...new Set((profile?.developmentSkills || []).flatMap((group) => group.items || []))].slice(0, 12)
 
   return (
     <section id="home" className="hero-profile relative overflow-hidden pt-24 pb-12 px-6 md:px-12 lg:px-16">
-      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-8 lg:grid-cols-12 lg:min-h-[58vh] lg:gap-10">
+      <div className="relative z-10 mx-auto grid w-full max-w-6xl grid-cols-1 items-start gap-8 lg:grid-cols-12 lg:gap-10">
         <motion.div variants={container} initial="hidden" animate="show" className="lg:col-span-7">
           <motion.p variants={item} className="hero-intro-label mb-4 flex items-center">
             <span className="cursor-blink mr-2 inline-block h-2 w-2 bg-primary shrink-0" aria-hidden="true" />
@@ -106,7 +85,7 @@ export default function Hero() {
             variants={item}
             className="font-display text-4xl md:text-5xl lg:text-7xl font-bold leading-[1.05] tracking-tight text-base-content mb-5 lg:mb-6"
           >
-            Hello, my name is <span className="text-primary">{firstName}.</span>
+            Hi, This is <span className="text-primary">{firstName}.</span>
           </motion.h1>
 
           {/* Phone / tablet: photo directly under the name */}
@@ -120,12 +99,8 @@ export default function Hero() {
             />
           </motion.div>
 
-          <motion.p variants={item} className="mb-4 max-w-xl text-base md:text-lg leading-relaxed text-base-content/65 lg:mb-6">
-            {introP1}
-          </motion.p>
-
-          <motion.p variants={item} className="mb-5 max-w-xl text-base md:text-lg leading-relaxed text-base-content/65 lg:mb-6">
-            {introP2}
+          <motion.p variants={item} className="mb-6 max-w-xl text-base md:text-lg leading-relaxed text-base-content/65 lg:mb-7">
+            {intro}
           </motion.p>
 
           <motion.div variants={item}>
@@ -156,12 +131,12 @@ export default function Hero() {
           </motion.div>
         </motion.div>
 
-        {/* Desktop / large screen: photo on the right (unchanged layout) */}
+        {/* Desktop: top of photo aligns with the "Hello..." heading */}
         <motion.div
           initial={{ opacity: 0, x: 24 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.15 }}
-          className="hidden lg:block lg:col-span-5"
+          className="hidden lg:block lg:col-span-5 lg:pt-[4.35rem]"
         >
           <HeroPhoto
             image={image}

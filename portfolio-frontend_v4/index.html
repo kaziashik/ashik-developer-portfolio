@@ -1,16 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="darkMode">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      (function () {
+        try {
+          localStorage.removeItem('theme')
+          var t = localStorage.getItem('portfolio-theme')
+          if (t !== 'lightMode' && t !== 'darkMode') t = 'darkMode'
+          document.documentElement.setAttribute('data-theme', t)
+        } catch (e) {
+          document.documentElement.setAttribute('data-theme', 'darkMode')
+        }
+      })()
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <title>Your Name — Software Engineer</title>
-    <meta name="description" content="Full-stack software engineer building fast, reliable products." />
+    <title>Kazi Ashik — MERN Stack Developer</title>
+    <meta name="description" content="MERN Stack developer building modern, responsive, and scalable web applications with React, Next.js, Node.js, and Prisma." />
   </head>
   <body class="bg-base-100 text-base-content">
     <div id="root"></div>

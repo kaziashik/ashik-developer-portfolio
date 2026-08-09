@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import Swal from 'sweetalert2'
 import { FiX } from 'react-icons/fi'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { createEducation, updateEducation } from '../../api/educationApi'
+import { toastError, toastSuccess } from '../../utils/swal'
 
 const VISIBILITY_OPTIONS = ['job', 'academic', 'personal']
 
@@ -67,16 +67,11 @@ export default function EducationFormModal({ education, onClose, onSaved }) {
         await createEducation(axiosSecure, payload)
       }
 
-      await Swal.fire({
-        icon: 'success',
-        title: isEdit ? 'Education updated successfully!' : 'Education added successfully!',
-        timer: 1500,
-        showConfirmButton: false,
-      })
+      await toastSuccess(isEdit ? 'Education updated successfully' : 'Education added successfully')
       onSaved?.()
       onClose()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Save failed', text: err?.response?.data?.message || err.message })
+      await toastError('Save failed', err?.response?.data?.message || err.message)
     } finally {
       setSubmitting(false)
     }

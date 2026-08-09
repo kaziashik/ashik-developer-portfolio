@@ -1,9 +1,8 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { Link } from 'react-router'
-import Swal from 'sweetalert2'
-import { FiArrowUpRight, FiGithub, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi'
-import AnimatedSection, { staggerContainer, fadeUp } from '../AnimatedSection'
+import { FiArrowUpRight, FiPlus } from 'react-icons/fi'
+import AnimatedSection, { staggerContainer } from '../AnimatedSection'
+import ProjectCard from '../ProjectCard'
 import ProjectFormModal from '../modals/ProjectFormModal'
 import { ProjectGridSkeleton } from '../skeletons/SectionCardSkeleton'
 import useAuth from '../../hooks/useAuth'
@@ -11,15 +10,17 @@ import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { deleteProject, updateProject } from '../../api/projectsApi'
 import { usePortfolio } from '../../contexts/PortfolioProvider'
 import { useProjectsData } from '../../hooks/useSectionData'
-import { mergeFeaturedProjects } from '../../data/featuredProjects'
+import { getShowcaseKey, mergeFeaturedProjects } from '../../data/featuredProjects'
+import { splitFeaturedProjects } from '../../utils/projectHelpers'
+import { confirmDelete, isPersistedId, toastError, toastSuccess } from '../../utils/swal'
 
 function sortProjects(merged) {
   const featuredOrder = ['rentnest', 'zapshift', 'gearup']
   return [...merged].sort((a, b) => {
     if (a.featured && !b.featured) return -1
     if (!a.featured && b.featured) return 1
-    const ai = featuredOrder.indexOf(String(a._id))
-    const bi = featuredOrder.indexOf(String(b._id))
+    const ai = featuredOrder.indexOf(String(getShowcaseKey(a) || a._id))
+    const bi = featuredOrder.indexOf(String(getShowcaseKey(b) || b._id))
     if (ai !== -1 || bi !== -1) {
       if (ai === -1) return 1
       if (bi === -1) return -1
@@ -32,157 +33,151 @@ function sortProjects(merged) {
 export default function Projects() {
   const { isAdmin } = useAuth()
   const axiosSecure = useAxiosSecure()
-  const { profile, refetchPortfolio, invalidatePortfolio } = usePortfolio()
-  const { data: apiProjects, loading, refetch: refetchProjects } = useProjectsData('job')
-  const [modalState, setModalState] = useState(null) // null | 'add' | project object
+  const { profile, invalidatePortfolio } = usePortfolio()
+  const { data: apiProjects, loading } = useProjectsData('job')
+  const [modalState, setModalState] = useState(null)
 
   const projects = useMemo(
     () => sortProjects(mergeFeaturedProjects(apiProjects || [])),
     [apiProjects]
   )
 
+  const { featured, rest } = useMemo(() => {
+    const split = splitFeaturedProjects(projects)
+    // One lead featured card for hierarchy; rest in grid
+    return {
+      featured: split.featured.slice(0, 1),
+      rest: [...split.featured.slice(1), ...split.rest],
+    }
+  }, [projects])
+
   const refreshAll = async () => {
-    await Promise.all([refetchPortfolio(), refetchProjects()])
-    invalidatePortfolio()
+    await invalidatePortfolio()
   }
 
   const handleDelete = async (project) => {
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: `Delete "${project.title}"?`,
-      text: 'This cannot be undone.',
-      showCancelButton: true,
-      confirmButtonText: 'Delete',
-      confirmButtonColor: '#dc2626',
-    })
+    if (!isPersistedId(project._id)) {
+      await toastError('Cannot delete', 'This project is not saved in the database yet.')
+      return
+    }
+
+    const result = await confirmDelete(`Delete "${project.title}"?`)
     if (!result.isConfirmed) return
 
     try {
       await deleteProject(axiosSecure, project._id)
-      await Swal.fire({ icon: 'success', title: 'Project deleted', timer: 1200, showConfirmButton: false })
+      await toastSuccess('Project deleted')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Delete failed', text: err?.response?.data?.message || err.message })
+      await toastError('Delete failed', err?.response?.data?.message || err.message)
     }
   }
 
   const handleToggleVisible = async (project) => {
+    if (!isPersistedId(project._id)) {
+      await toastError('Cannot update visibility', 'Save this project to the database first (Add / seed).')
+      return
+    }
+
+    const nextPublic = !(project.isPublic !== false)
     try {
-      await updateProject(axiosSecure, project._id, { isPublic: !(project.isPublic !== false) })
+      await updateProject(axiosSecure, project._id, { isPublic: nextPublic })
+      await toastSuccess(nextPublic ? 'Project visible to visitors' : 'Project hidden from visitors')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Could not update visibility', text: err?.response?.data?.message || err.message })
+      await toastError('Could not update visibility', err?.response?.data?.message || err.message)
     }
+  }
+
+  const handleEdit = async (project) => {
+    if (!isPersistedId(project._id)) {
+      await toastError('Cannot update', 'This showcase item is not in the database yet.')
+      return
+    }
+    setModalState(project)
+  }
+
+  const cardProps = {
+    isAdmin,
+    onEdit: handleEdit,
+    onToggleVisible: handleToggleVisible,
+    onDelete: handleDelete,
   }
 
   return (
     <AnimatedSection id="projects" className="section-spacing max-w-6xl mx-auto px-6">
-      <div className="flex items-end justify-between mb-10">
+      <div className="flex flex-wrap items-end justify-between gap-4 mb-10">
         <div>
           <p className="eyebrow text-primary text-sm mb-3 uppercase">// selected work</p>
           <h2 className="font-display text-4xl md:text-5xl font-bold text-base-content">Featured projects</h2>
+          <p className="mt-3 max-w-xl text-base text-base-content/55">
+            Selected full-stack builds — product focus, clean UI, and production-ready APIs.
+          </p>
         </div>
-        {profile?.links?.github && (
-          <a href={profile.links.github} target="_blank" rel="noreferrer"
-            className="eyebrow text-xs text-base-content/60 hover:text-primary flex items-center gap-1">
-            all repositories <FiArrowUpRight className="w-3 h-3" />
-          </a>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setModalState('add')}
+              className="btn btn-outline btn-sm rounded-full gap-1.5"
+            >
+              <FiPlus className="w-3.5 h-3.5" /> Add project
+            </button>
+          )}
+          {profile?.links?.github && (
+            <a
+              href={profile.links.github}
+              target="_blank"
+              rel="noreferrer"
+              className="eyebrow text-xs text-base-content/60 hover:text-primary flex items-center gap-1"
+            >
+              all repositories <FiArrowUpRight className="w-3 h-3" />
+            </a>
+          )}
+        </div>
       </div>
 
       {loading ? (
         <ProjectGridSkeleton cards={3} />
       ) : (
         <motion.div
-          key={`projects-${projects.map((p) => p._id).join('-') || 'empty'}`}
           variants={staggerContainer}
           initial="hidden"
-          animate="show"
-          className="grid md:grid-cols-3 gap-5"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.1 }}
+          className="space-y-5"
         >
-          {projects.map((p) => {
-            const hidden = p.isPublic === false
-            return (
-              <motion.div
-                key={p._id}
-                variants={fadeUp}
-                whileHover={{ y: -6 }}
-                className={`group relative card bg-base-100 border overflow-hidden transition-shadow hover:shadow-lg cursor-pointer ${hidden ? 'border-warning/50' : 'border-base-300 hover:border-primary/40'}`}
-              >
-                <Link
-                  to={`/projects/${p._id}`}
-                  className="absolute inset-0 z-[1]"
-                  aria-label={`View ${p.title} details`}
-                />
+          {/* Lead featured — full width on large screens */}
+          {featured.map((p) => (
+            <ProjectCard
+              key={p._id}
+              project={p}
+              featured
+              canManage={isPersistedId(p._id)}
+              {...cardProps}
+            />
+          ))}
 
-                <div className="aspect-video bg-base-200 flex items-center justify-center text-base-content/40 text-xs eyebrow overflow-hidden relative">
-                  {p.imageUrls?.[0] ? (
-                    <img src={p.imageUrls[0]} alt={p.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
-                  ) : (
-                    'project preview'
-                  )}
-                  {p.featured && !hidden && (
-                    <span className="absolute top-2 left-2 badge badge-primary badge-sm eyebrow z-[2]">Featured</span>
-                  )}
-                  {isAdmin && hidden && (
-                    <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow z-[2]">Hidden from visitors</span>
-                  )}
-                </div>
-                <div className="card-body p-5">
-                  <h3 className="font-display font-semibold text-lg text-base-content mb-2 group-hover:text-primary transition-colors">{p.title}</h3>
-                  <p className="text-base text-base-content/70 mb-4 line-clamp-3">{p.details?.[0]}</p>
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {(p.toolsUsed || []).map((tag) => (
-                      <span key={tag} className="badge badge-outline badge-sm eyebrow text-[10px]">{tag}</span>
-                    ))}
-                  </div>
-
-                  <div className="relative z-[2] flex flex-wrap gap-2 mt-auto">
-                    {p.links?.live && (
-                      <a href={p.links.live} target="_blank" rel="noreferrer" className="btn btn-xs btn-outline gap-1">
-                        <FiArrowUpRight className="w-3 h-3" /> Live Demo
-                      </a>
-                    )}
-                    {p.links?.github && (
-                      <a href={p.links.github} target="_blank" rel="noreferrer" className="btn btn-xs btn-outline gap-1">
-                        <FiGithub className="w-3 h-3" /> GitHub
-                      </a>
-                    )}
-                    <span className="btn btn-xs btn-primary gap-1 pointer-events-none">
-                      Overview
-                    </span>
-                  </div>
-
-                  {isAdmin && (
-                    <div className="relative z-[2] flex flex-wrap gap-2 mt-3 pt-3 border-t border-base-300">
-                      <button onClick={() => setModalState(p)} className="btn btn-xs btn-ghost gap-1">
-                        <FiEdit2 className="w-3 h-3" /> Update
-                      </button>
-                      <button onClick={() => handleToggleVisible(p)} className="btn btn-xs btn-ghost gap-1">
-                        {hidden ? <FiEye className="w-3 h-3" /> : <FiEyeOff className="w-3 h-3" />}
-                        {hidden ? 'Show to Visitors' : 'Hide from Visitors'}
-                      </button>
-                      <button onClick={() => handleDelete(p)} className="btn btn-xs btn-ghost text-error gap-1">
-                        <FiTrash2 className="w-3 h-3" /> Delete
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )
-          })}
-
-          {isAdmin && (
-            <motion.button
-              variants={fadeUp}
-              onClick={() => setModalState('add')}
-              className="card border-2 border-dashed border-base-300 hover:border-primary/50 flex items-center justify-center min-h-[280px] text-base-content/50 hover:text-primary transition-colors"
+          {/* Remaining cards — balanced columns (no empty 3rd slot) */}
+          {rest.length > 0 && (
+            <div
+              className={
+                rest.length === 1
+                  ? 'grid md:grid-cols-2 gap-5'
+                  : rest.length === 2
+                    ? 'grid md:grid-cols-2 gap-5'
+                    : 'grid md:grid-cols-2 lg:grid-cols-3 gap-5'
+              }
             >
-              <div className="flex flex-col items-center gap-2">
-                <FiPlus className="w-8 h-8" />
-                <span className="eyebrow text-xs uppercase">Add New Project</span>
-              </div>
-            </motion.button>
+              {rest.map((p) => (
+                <ProjectCard
+                  key={p._id}
+                  project={p}
+                  canManage={isPersistedId(p._id)}
+                  {...cardProps}
+                />
+              ))}
+            </div>
           )}
         </motion.div>
       )}

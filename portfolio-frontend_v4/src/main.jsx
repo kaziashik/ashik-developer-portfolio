@@ -17,7 +17,7 @@ const queryClient = new QueryClient({
   },
 })
 
-// Prefetch portfolio data as soon as the app boots (before first paint settles)
+// Warm the portfolio bundle + profile (matches PortfolioProvider / Skills keys)
 const apiBase = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000'
 const warm = (path) =>
   fetch(`${String(apiBase).replace(/\/$/, '')}${path}`)
@@ -28,18 +28,6 @@ const warm = (path) =>
 queryClient.prefetchQuery({
   queryKey: ['portfolio', 'job', 'public'],
   queryFn: () => warm('/api/portfolio?visibility=job'),
-})
-queryClient.prefetchQuery({
-  queryKey: ['experiences', 'job'],
-  queryFn: () => warm('/api/experiences?visibility=job'),
-})
-queryClient.prefetchQuery({
-  queryKey: ['education', 'job'],
-  queryFn: () => warm('/api/education?visibility=job'),
-})
-queryClient.prefetchQuery({
-  queryKey: ['projects', 'job'],
-  queryFn: () => warm('/api/projects?visibility=job'),
 })
 queryClient.prefetchQuery({
   queryKey: ['profile', 'public'],

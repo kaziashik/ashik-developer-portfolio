@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Swal from 'sweetalert2'
 import { FiMail, FiGithub, FiLinkedin, FiMapPin } from 'react-icons/fi'
 import { useProfileData } from '../contexts/ProfileContext'
 import useAxios from '../hooks/useAxios'
+import { getSwal } from '../utils/swal'
 
 export default function Contact() {
   const { profile } = useProfileData()
@@ -19,6 +19,7 @@ export default function Contact() {
     e.preventDefault()
 
     setStatus('sending')
+    const Swal = await getSwal()
     try {
       await axiosPublic.post('/api/contact', {
         name: form.name,

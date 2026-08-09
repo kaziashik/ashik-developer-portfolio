@@ -1,6 +1,6 @@
 /**
- * Static featured projects merged into Selected Work.
- * Live site screenshots live in /public/projects/.
+ * Static featured projects used as fallback / image enrichment.
+ * When a matching API project exists, the DB document wins (real Mongo _id for admin CRUD).
  */
 export const STATIC_FEATURED_PROJECTS = [
   {
@@ -128,14 +128,57 @@ export function getStaticProjectById(id) {
   return STATIC_FEATURED_PROJECTS.find((p) => p._id === id) || null
 }
 
+export function getShowcaseKey(project) {
+  if (!project) return null
+  if (project._showcaseKey) return project._showcaseKey
+  const hit = STATIC_FEATURED_PROJECTS.find((s) => matchesStatic(project, s))
+  return hit?._id || null
+}
+
+function preferLocalImages(apiImages, staticImages) {
+  const first = apiImages?.[0] || ''
+  if (!first || first.includes('mshots') || first.includes('placeholder')) {
+    return staticImages?.length ? staticImages : apiImages
+  }
+  return apiImages?.length ? apiImages : staticImages
+}
+
 /**
- * Merge static featured projects ahead of API list.
- * Showcase trio always wins (proper screenshots + resume-ready copy).
+ * Prefer DB projects (real Mongo _ids) when they match a showcase entry.
+ * Inject static fallbacks only when no API match exists (marked _isStatic).
  */
 export function mergeFeaturedProjects(apiProjects = []) {
   const list = Array.isArray(apiProjects) ? [...apiProjects] : []
-  const withoutShowcaseDupes = list.filter(
-    (apiProject) => !STATIC_FEATURED_PROJECTS.some((staticProject) => matchesStatic(apiProject, staticProject))
-  )
-  return [...STATIC_FEATURED_PROJECTS, ...withoutShowcaseDupes]
+  const matchedStaticIds = new Set()
+
+  const fromApi = list.map((apiProject) => {
+    const staticMatch = STATIC_FEATURED_PROJECTS.find((s) => matchesStatic(apiProject, s))
+    if (!staticMatch) return apiProject
+
+    matchedStaticIds.add(staticMatch._id)
+    return {
+      ...staticMatch,
+      ...apiProject,
+      _id: apiProject._id,
+      _showcaseKey: staticMatch._id,
+      _isStatic: false,
+      imageUrls: preferLocalImages(apiProject.imageUrls, staticMatch.imageUrls),
+      details: apiProject.details?.length ? apiProject.details : staticMatch.details,
+      toolsUsed: apiProject.toolsUsed?.length ? apiProject.toolsUsed : staticMatch.toolsUsed,
+      links: {
+        ...staticMatch.links,
+        ...apiProject.links,
+      },
+      featured: apiProject.featured ?? staticMatch.featured,
+      isPublic: apiProject.isPublic !== false,
+    }
+  })
+
+  const missingStatic = STATIC_FEATURED_PROJECTS.filter((s) => !matchedStaticIds.has(s._id)).map((s) => ({
+    ...s,
+    _showcaseKey: s._id,
+    _isStatic: true,
+  }))
+
+  return [...missingStatic, ...fromApi]
 }

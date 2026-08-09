@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useMemo, useEffect } from 'react'
+import { createContext, useContext, useCallback, useMemo } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import useAxiosSecure from '../hooks/useAxiosSecure'
 import useAuth from '../hooks/useAuth'
@@ -14,43 +14,23 @@ export function PortfolioProvider({ children, visibility = 'job' }) {
   const { isAdmin, authReady } = useAuth()
   const queryClient = useQueryClient()
 
-  // Always load the PUBLIC portfolio first — never block on admin auth.
-  // This fixes empty Experience/Education when admin session race/fails.
   const publicQuery = useQuery({
     queryKey: ['portfolio', visibility, 'public'],
     queryFn: () => fetchPublicPortfolio(visibility),
     staleTime: 60 * 1000,
     gcTime: 30 * 60 * 1000,
     retry: 2,
-    refetchOnMount: true,
-    enabled: true,
+    refetchOnMount: false,
   })
 
-  // Admin overlay (includes hidden items) — optional, never replaces public data on failure
   const adminQuery = useQuery({
     queryKey: ['portfolio', visibility, 'admin'],
     queryFn: () => getPortfolioForAdmin(axiosSecure, { visibility }),
     staleTime: 30 * 1000,
     enabled: Boolean(authReady && isAdmin),
     retry: 1,
+    refetchOnMount: false,
   })
-
-  // Prefetch section endpoints in parallel for snappier section mounts
-  useEffect(() => {
-    const v = visibility
-    queryClient.prefetchQuery({
-      queryKey: ['experiences', v],
-      queryFn: () => import('../api/publicFetch').then((m) => m.fetchPublicExperiences(v)),
-    })
-    queryClient.prefetchQuery({
-      queryKey: ['education', v],
-      queryFn: () => import('../api/publicFetch').then((m) => m.fetchPublicEducation(v)),
-    })
-    queryClient.prefetchQuery({
-      queryKey: ['projects', v],
-      queryFn: () => import('../api/publicFetch').then((m) => m.fetchPublicProjects(v)),
-    })
-  }, [queryClient, visibility])
 
   const data = isAdmin && adminQuery.data ? adminQuery.data : publicQuery.data
 
@@ -59,20 +39,22 @@ export function PortfolioProvider({ children, visibility = 'job' }) {
       publicQuery.refetch(),
       isAdmin ? adminQuery.refetch() : Promise.resolve(null),
     ])
-    return results[0]?.data
+    return isAdmin ? results[1]?.data ?? results[0]?.data : results[0]?.data
   }, [publicQuery, adminQuery, isAdmin])
 
-  const invalidatePortfolio = useCallback(() => {
-    queryClient.invalidateQueries({ queryKey: ['portfolio'] })
-    queryClient.invalidateQueries({ queryKey: ['experiences'] })
-    queryClient.invalidateQueries({ queryKey: ['education'] })
-    queryClient.invalidateQueries({ queryKey: ['projects'] })
+  const invalidatePortfolio = useCallback(async () => {
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ['portfolio'] }),
+      queryClient.invalidateQueries({ queryKey: ['experiences'] }),
+      queryClient.invalidateQueries({ queryKey: ['education'] }),
+      queryClient.invalidateQueries({ queryKey: ['projects'] }),
+      queryClient.invalidateQueries({ queryKey: ['profile'] }),
+      queryClient.invalidateQueries({ queryKey: ['project'] }),
+    ])
   }, [queryClient])
 
   const value = useMemo(() => {
     const loading = publicQuery.isPending || publicQuery.isLoading
-    // Important: do NOT invent a stub profile when data is missing —
-    // a `{ links }` stub made Skills think loading was done with empty skills.
     const profile = data?.profile ? mergeProfileLinks(data.profile) : null
     return {
       profile,

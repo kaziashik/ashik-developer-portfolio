@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import Swal from 'sweetalert2'
 import { FiX } from 'react-icons/fi'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { updateProfile } from '../../api/profileApi'
 import { useProfileData } from '../../contexts/ProfileContext'
+import { toastError, toastSuccess } from '../../utils/swal'
 
 export default function AboutFormModal({ onClose }) {
   const axiosSecure = useAxiosSecure()
@@ -17,15 +17,10 @@ export default function AboutFormModal({ onClose }) {
     try {
       await updateProfile(axiosSecure, { researchSummary: text })
       await refetchProfile()
-      await Swal.fire({
-        icon: 'success',
-        title: 'Your website has been updated successfully!',
-        timer: 1600,
-        showConfirmButton: false,
-      })
+      await toastSuccess('About section updated successfully')
       onClose()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Update failed', text: err?.response?.data?.message || err.message })
+      await toastError('Update failed', err?.response?.data?.message || err.message)
     } finally {
       setSubmitting(false)
     }

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import Swal from 'sweetalert2'
 import { FiX, FiPlus, FiTrash2, FiSave } from 'react-icons/fi'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { addSkillCategory, updateSkillCategory, deleteSkillCategory } from '../../api/profileApi'
 import { useProfileData } from '../../contexts/ProfileContext'
+import { confirmDelete, toastError, toastSuccess } from '../../utils/swal'
 
 const FIELD = { research: 'researchSkills', development: 'developmentSkills' }
 
@@ -19,16 +19,8 @@ export default function SkillsFormModal({ type = 'development', onClose }) {
   const [newItemsText, setNewItemsText] = useState('')
   const [busyId, setBusyId] = useState(null)
 
-  const success = () =>
-    Swal.fire({
-      icon: 'success',
-      title: 'Skills & Tech Stack updated successfully!',
-      timer: 1400,
-      showConfirmButton: false,
-    })
-
-  const fail = (err) =>
-    Swal.fire({ icon: 'error', title: 'Update failed', text: err?.response?.data?.message || err.message })
+  const success = () => toastSuccess('Skills & Tech Stack updated successfully')
+  const fail = (err) => toastError('Update failed', err?.response?.data?.message || err.message)
 
   const handleDraftChange = (id, field, value) => {
     setDrafts((prev) => prev.map((d) => (d._id === id ? { ...d, [field]: value } : d)))
@@ -49,12 +41,7 @@ export default function SkillsFormModal({ type = 'development', onClose }) {
   }
 
   const handleDeleteRow = async (id) => {
-    const result = await Swal.fire({
-      icon: 'warning',
-      title: 'Remove this category?',
-      showCancelButton: true,
-      confirmButtonText: 'Remove',
-    })
+    const result = await confirmDelete('Remove this category?', 'This skill group will be removed.')
     if (!result.isConfirmed) return
 
     setBusyId(id)

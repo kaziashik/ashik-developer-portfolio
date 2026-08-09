@@ -1,8 +1,8 @@
 import { useState } from 'react'
-import Swal from 'sweetalert2'
 import { FiX } from 'react-icons/fi'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { createExperience, updateExperience } from '../../api/experienceApi'
+import { toastError, toastSuccess } from '../../utils/swal'
 
 const CATEGORY_OPTIONS = ['Research', 'Industry', 'Teaching']
 const VISIBILITY_OPTIONS = ['job', 'academic', 'personal']
@@ -71,16 +71,11 @@ export default function ExperienceFormModal({ experience, onClose, onSaved }) {
         await createExperience(axiosSecure, payload)
       }
 
-      await Swal.fire({
-        icon: 'success',
-        title: isEdit ? 'Experience updated successfully!' : 'Experience added successfully!',
-        timer: 1500,
-        showConfirmButton: false,
-      })
+      await toastSuccess(isEdit ? 'Experience updated successfully' : 'Experience added successfully')
       onSaved?.()
       onClose()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Save failed', text: err?.response?.data?.message || err.message })
+      await toastError('Save failed', err?.response?.data?.message || err.message)
     } finally {
       setSubmitting(false)
     }

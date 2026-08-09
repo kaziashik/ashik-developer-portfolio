@@ -42,10 +42,7 @@ export default function Navbar() {
     if (isHome) {
       document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     } else {
-      navigate('/')
-      setTimeout(() => {
-        document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-      }, 100)
+      navigate('/', { state: { scrollTo: item.id } })
     }
   }
 
@@ -57,7 +54,7 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to={isAdmin ? '/' : '/login'} className="font-display font-bold text-xl text-base-content">
+        <Link to="/" className="font-display font-bold text-xl text-base-content">
           Kazi Ashik <span className="text-primary">.</span>
         </Link>
 

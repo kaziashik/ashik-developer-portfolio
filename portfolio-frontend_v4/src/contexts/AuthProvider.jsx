@@ -118,7 +118,7 @@ function AuthProviderInner({ children }) {
     isAdmin: !!admin,
     accessToken,
     tokenRef,
-    authReady: true,
+    authReady: !loading,
     loading,
     loginWithEmail,
     loginWithGoogle,

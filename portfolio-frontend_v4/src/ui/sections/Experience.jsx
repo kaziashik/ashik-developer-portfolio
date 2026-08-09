@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { motion } from 'framer-motion'
-import Swal from 'sweetalert2'
-import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi'
+import { FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff, FiMapPin, FiCalendar, FiBookOpen, FiBriefcase } from 'react-icons/fi'
+import { confirmDelete, toastError, toastSuccess } from '../../utils/swal'
 import AnimatedSection, { staggerContainer, fadeUp } from '../AnimatedSection'
 import ExperienceFormModal from '../modals/ExperienceFormModal'
 import EducationFormModal from '../modals/EducationFormModal'
@@ -13,10 +13,36 @@ import { useEducationData, useExperiencesData } from '../../hooks/useSectionData
 import { deleteExperience, updateExperience } from '../../api/experienceApi'
 import { deleteEducation, updateEducation } from '../../api/educationApi'
 
+function AdminActions({ hidden, onEdit, onToggle, onDelete }) {
+  return (
+    <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-base-300/80">
+      {hidden && <span className="badge badge-warning badge-sm eyebrow">Hidden</span>}
+      <button type="button" onClick={onEdit} className="btn btn-ghost btn-xs gap-1">
+        <FiEdit2 className="w-3 h-3" /> Update
+      </button>
+      <button type="button" onClick={onToggle} className="btn btn-ghost btn-xs gap-1">
+        {hidden ? <FiEye className="w-3 h-3" /> : <FiEyeOff className="w-3 h-3" />} {hidden ? 'Show' : 'Hide'}
+      </button>
+      <button type="button" onClick={onDelete} className="btn btn-ghost btn-xs text-error gap-1">
+        <FiTrash2 className="w-3 h-3" /> Delete
+      </button>
+    </div>
+  )
+}
+
+function DateBadge({ startDate, endDate }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary/8 px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.08em] text-primary">
+      <FiCalendar className="h-3 w-3 shrink-0" aria-hidden="true" />
+      {startDate} — {endDate}
+    </span>
+  )
+}
+
 export default function Experience() {
   const { isAdmin } = useAuth()
   const axiosSecure = useAxiosSecure()
-  const { refetchPortfolio, invalidatePortfolio } = usePortfolio()
+  const { invalidatePortfolio } = usePortfolio()
   const {
     data: experiences,
     loading: expLoading,
@@ -34,59 +60,67 @@ export default function Experience() {
   const [eduModalState, setEduModalState] = useState(null)
 
   const refreshAll = async () => {
-    await Promise.all([refetchPortfolio(), refetchExp(), refetchEdu()])
-    invalidatePortfolio()
+    await invalidatePortfolio()
   }
 
   const handleDeleteExperience = async (exp) => {
-    const result = await Swal.fire({ icon: 'warning', title: `Delete "${exp.role}"?`, showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626' })
+    const result = await confirmDelete(`Delete "${exp.role}"?`)
     if (!result.isConfirmed) return
     try {
       await deleteExperience(axiosSecure, exp._id)
-      Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false })
+      await toastSuccess('Experience deleted')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Delete failed', text: err?.response?.data?.message || err.message })
+      await toastError('Delete failed', err?.response?.data?.message || err.message)
     }
   }
 
   const handleToggleExperienceVisible = async (exp) => {
+    const nextPublic = !(exp.isPublic !== false)
     try {
-      await updateExperience(axiosSecure, exp._id, { isPublic: !(exp.isPublic !== false) })
+      await updateExperience(axiosSecure, exp._id, { isPublic: nextPublic })
+      await toastSuccess(nextPublic ? 'Experience visible to visitors' : 'Experience hidden from visitors')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Could not update visibility', text: err?.response?.data?.message || err.message })
+      await toastError('Could not update visibility', err?.response?.data?.message || err.message)
     }
   }
 
   const handleDeleteEducation = async (ed) => {
-    const result = await Swal.fire({ icon: 'warning', title: `Delete "${ed.degree}"?`, showCancelButton: true, confirmButtonText: 'Delete', confirmButtonColor: '#dc2626' })
+    const result = await confirmDelete(`Delete "${ed.degree}"?`)
     if (!result.isConfirmed) return
     try {
       await deleteEducation(axiosSecure, ed._id)
-      Swal.fire({ icon: 'success', title: 'Deleted', timer: 1200, showConfirmButton: false })
+      await toastSuccess('Education deleted')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Delete failed', text: err?.response?.data?.message || err.message })
+      await toastError('Delete failed', err?.response?.data?.message || err.message)
     }
   }
 
   const handleToggleEducationVisible = async (ed) => {
+    const nextPublic = !(ed.isPublic !== false)
     try {
-      await updateEducation(axiosSecure, ed._id, { isPublic: !(ed.isPublic !== false) })
+      await updateEducation(axiosSecure, ed._id, { isPublic: nextPublic })
+      await toastSuccess(nextPublic ? 'Education visible to visitors' : 'Education hidden from visitors')
       refreshAll()
     } catch (err) {
-      Swal.fire({ icon: 'error', title: 'Could not update visibility', text: err?.response?.data?.message || err.message })
+      await toastError('Could not update visibility', err?.response?.data?.message || err.message)
     }
   }
 
   return (
-    <AnimatedSection id="experience" className="section-spacing max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10">
+    <AnimatedSection id="experience" className="section-spacing max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-10 lg:gap-12">
       <div>
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-8">
           <div>
             <p className="eyebrow text-primary text-sm mb-3 uppercase">// career</p>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-base-content">Experience</h2>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-base-content flex items-center gap-3">
+              <span className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-lg border border-base-300 bg-base-100 text-primary">
+                <FiBriefcase className="h-5 w-5" aria-hidden="true" />
+              </span>
+              Experience
+            </h2>
           </div>
           {isAdmin && (
             <button onClick={() => setExpModalState('add')} className="btn btn-outline btn-sm rounded-full gap-1">
@@ -104,11 +138,11 @@ export default function Experience() {
           </div>
         ) : (
           <motion.div
-            key={`experience-${experiences.map((e) => e._id).join('-') || 'empty'}`}
             variants={staggerContainer}
             initial="hidden"
-            animate="show"
-            className="space-y-8"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+            className="relative space-y-5 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-px before:bg-base-300"
           >
             {experiences.length === 0 ? (
               <p className="text-sm text-base-content/50">No experience entries yet.</p>
@@ -116,23 +150,44 @@ export default function Experience() {
               experiences.map((exp) => {
                 const hidden = exp.isPublic === false
                 return (
-                  <motion.div key={exp._id} variants={fadeUp} className={`border-l-2 pl-5 relative ${hidden ? 'border-warning/50' : 'border-base-300'}`}>
-                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 bg-primary rounded-full" />
-                    <p className="eyebrow text-xs text-base-content/50 uppercase mb-1">{exp.startDate} — {exp.endDate}</p>
-                    <h3 className="font-display font-semibold text-lg text-base-content">{exp.role} · {exp.organization}</h3>
-                    <p className="text-sm text-base-content/50 mb-2">{exp.location}</p>
-                    <ul className="text-base text-base-content/70 space-y-1 list-disc list-inside">
-                      {(exp.highlights || []).map((pt) => <li key={pt}>{pt}</li>)}
-                    </ul>
+                  <motion.div
+                    key={exp._id}
+                    variants={fadeUp}
+                    className={`relative rounded-xl border bg-base-100/80 p-5 pl-12 shadow-sm ${
+                      hidden ? 'border-warning/40' : 'border-base-300'
+                    }`}
+                  >
+                    <span className="absolute left-[7px] top-6 z-10 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-base-100" />
+                    <div className="mb-3">
+                      <DateBadge startDate={exp.startDate} endDate={exp.endDate} />
+                    </div>
+                    <h3 className="font-display text-lg font-bold text-base-content leading-snug">
+                      {exp.role}
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-primary">{exp.organization}</p>
+                    {exp.location && (
+                      <p className="mt-1.5 mb-3 inline-flex items-center gap-1.5 text-sm text-base-content/60">
+                        <FiMapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                        {exp.location}
+                      </p>
+                    )}
+                    {(exp.highlights || []).length > 0 && (
+                      <ul className="mt-3 space-y-2.5">
+                        {(exp.highlights || []).map((pt) => (
+                          <li key={pt} className="flex items-start gap-2.5 text-[0.95rem] leading-relaxed text-base-content/75">
+                            <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-primary" aria-hidden="true" />
+                            <span>{pt}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                     {isAdmin && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {hidden && <span className="badge badge-warning badge-sm eyebrow">Hidden</span>}
-                        <button onClick={() => setExpModalState(exp)} className="btn btn-ghost btn-xs gap-1"><FiEdit2 className="w-3 h-3" /> Update</button>
-                        <button onClick={() => handleToggleExperienceVisible(exp)} className="btn btn-ghost btn-xs gap-1">
-                          {hidden ? <FiEye className="w-3 h-3" /> : <FiEyeOff className="w-3 h-3" />} {hidden ? 'Show' : 'Hide'}
-                        </button>
-                        <button onClick={() => handleDeleteExperience(exp)} className="btn btn-ghost btn-xs text-error gap-1"><FiTrash2 className="w-3 h-3" /> Delete</button>
-                      </div>
+                      <AdminActions
+                        hidden={hidden}
+                        onEdit={() => setExpModalState(exp)}
+                        onToggle={() => handleToggleExperienceVisible(exp)}
+                        onDelete={() => handleDeleteExperience(exp)}
+                      />
                     )}
                   </motion.div>
                 )
@@ -143,10 +198,15 @@ export default function Experience() {
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-10">
+        <div className="flex items-center justify-between mb-8">
           <div>
             <p className="eyebrow text-primary text-sm mb-3 uppercase">// education</p>
-            <h2 className="font-display text-4xl md:text-5xl font-bold text-base-content">Education</h2>
+            <h2 className="font-display text-4xl md:text-5xl font-bold text-base-content flex items-center gap-3">
+              <span className="hidden sm:inline-flex h-10 w-10 items-center justify-center rounded-lg border border-base-300 bg-base-100 text-primary">
+                <FiBookOpen className="h-5 w-5" aria-hidden="true" />
+              </span>
+              Education
+            </h2>
           </div>
           {isAdmin && (
             <button onClick={() => setEduModalState('add')} className="btn btn-outline btn-sm rounded-full gap-1">
@@ -164,11 +224,11 @@ export default function Experience() {
           </div>
         ) : (
           <motion.div
-            key={`education-${education.map((e) => e._id).join('-') || 'empty'}`}
             variants={staggerContainer}
             initial="hidden"
-            animate="show"
-            className="space-y-8"
+            whileInView="show"
+            viewport={{ once: true, amount: 0.15 }}
+            className="relative space-y-5 before:absolute before:left-[11px] before:top-3 before:bottom-3 before:w-px before:bg-base-300"
           >
             {education.length === 0 ? (
               <p className="text-sm text-base-content/50">No education entries yet.</p>
@@ -176,21 +236,33 @@ export default function Experience() {
               education.map((ed) => {
                 const hidden = ed.isPublic === false
                 return (
-                  <motion.div key={ed._id} variants={fadeUp} className={`border-l-2 pl-5 relative ${hidden ? 'border-warning/50' : 'border-base-300'}`}>
-                    <span className="absolute -left-[5px] top-1.5 w-2 h-2 bg-primary rounded-full" />
-                    <p className="eyebrow text-xs text-base-content/50 uppercase mb-1">{ed.startDate} — {ed.endDate}</p>
-                    <h3 className="font-display font-semibold text-lg text-base-content">{ed.degree}</h3>
-                    <p className="text-sm text-base-content/50 mb-2">{ed.institution}</p>
-                    {ed.gpa && <p className="text-base text-base-content/70">GPA: {ed.gpa}</p>}
+                  <motion.div
+                    key={ed._id}
+                    variants={fadeUp}
+                    className={`relative rounded-xl border bg-base-100/80 p-5 pl-12 shadow-sm ${
+                      hidden ? 'border-warning/40' : 'border-base-300'
+                    }`}
+                  >
+                    <span className="absolute left-[7px] top-6 z-10 h-2.5 w-2.5 rounded-full bg-primary ring-4 ring-base-100" />
+                    <div className="mb-3">
+                      <DateBadge startDate={ed.startDate} endDate={ed.endDate} />
+                    </div>
+                    <h3 className="font-display text-lg font-bold text-base-content leading-snug">
+                      {ed.degree}
+                    </h3>
+                    <p className="mt-1 text-sm font-medium text-primary">{ed.institution}</p>
+                    {ed.gpa && (
+                      <p className="mt-3 inline-flex rounded-md border border-base-300 bg-base-200/60 px-2.5 py-1 text-sm text-base-content/70">
+                        GPA: {ed.gpa}
+                      </p>
+                    )}
                     {isAdmin && (
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {hidden && <span className="badge badge-warning badge-sm eyebrow">Hidden</span>}
-                        <button onClick={() => setEduModalState(ed)} className="btn btn-ghost btn-xs gap-1"><FiEdit2 className="w-3 h-3" /> Update</button>
-                        <button onClick={() => handleToggleEducationVisible(ed)} className="btn btn-ghost btn-xs gap-1">
-                          {hidden ? <FiEye className="w-3 h-3" /> : <FiEyeOff className="w-3 h-3" />} {hidden ? 'Show' : 'Hide'}
-                        </button>
-                        <button onClick={() => handleDeleteEducation(ed)} className="btn btn-ghost btn-xs text-error gap-1"><FiTrash2 className="w-3 h-3" /> Delete</button>
-                      </div>
+                      <AdminActions
+                        hidden={hidden}
+                        onEdit={() => setEduModalState(ed)}
+                        onToggle={() => handleToggleEducationVisible(ed)}
+                        onDelete={() => handleDeleteEducation(ed)}
+                      />
                     )}
                   </motion.div>
                 )
