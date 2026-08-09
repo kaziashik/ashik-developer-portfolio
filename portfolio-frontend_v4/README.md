@@ -1,5 +1,7 @@
 # Portfolio Frontend (Job / Developer Site)
 
+**Live website:** [https://ashikportfolio-auth.web.app](https://ashikportfolio-auth.web.app)
+
 React + Vite, Tailwind v4 + DaisyUI, Framer Motion — same visual design as before, now wired to your live backend instead of static data.
 
 ## 1. First — apply the backend additions
@@ -51,9 +53,11 @@ npm run dev
 
 ## 5. Deploying
 
-You mentioned deploying to Firebase Hosting later:
+Hosted on Firebase: **https://ashikportfolio-auth.web.app**
+
 ```bash
 npm run build
-firebase deploy
+firebase deploy --only hosting --project ashikportfolio-auth
 ```
-Just make sure your production `.env` values (especially `VITE_API_BASE_URL` pointing at your deployed backend, e.g. Vercel) are set before building — Vite bakes `VITE_*` vars into the build at build time, not runtime.
+
+Make sure production env values (especially `VITE_API_BASE_URL` pointing at your deployed backend) are set before building — Vite bakes `VITE_*` vars into the build at build time, not runtime.

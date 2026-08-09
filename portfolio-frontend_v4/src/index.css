@@ -6,20 +6,21 @@
   default: false;
   prefersdark: false;
   color-scheme: light;
-  --color-base-100: oklch(98% 0.004 90);
-  --color-base-200: oklch(95% 0.005 90);
-  --color-base-300: oklch(90% 0.007 90);
-  --color-base-content: oklch(18% 0.01 90);
-  --color-primary: oklch(55% 0.19 25);
-  --color-primary-content: oklch(98% 0 0);
-  --color-secondary: oklch(18% 0.01 90);
-  --color-secondary-content: oklch(98% 0 0);
-  --color-accent: oklch(55% 0.19 25);
-  --color-accent-content: oklch(98% 0 0);
-  --color-neutral: oklch(18% 0.01 90);
-  --color-neutral-content: oklch(98% 0 0);
-  --radius-box: 1rem;
-  --radius-field: 2rem;
+  /* Inspired by auspham.dev light tokens */
+  --color-base-100: #f9f9f9;
+  --color-base-200: #f0f0f0;
+  --color-base-300: #e4e4e4;
+  --color-base-content: #000000;
+  --color-primary: #ab4e4f;
+  --color-primary-content: #ffffff;
+  --color-secondary: #000000;
+  --color-secondary-content: #ffffff;
+  --color-accent: #ab4e4f;
+  --color-accent-content: #ffffff;
+  --color-neutral: #000000;
+  --color-neutral-content: #ffffff;
+  --radius-box: 0.25rem;
+  --radius-field: 0.25rem;
 }
 
 @plugin "daisyui/theme" {
@@ -27,25 +28,26 @@
   default: true;
   prefersdark: true;
   color-scheme: dark;
-  --color-base-100: oklch(15% 0.006 270);
-  --color-base-200: oklch(18% 0.007 270);
-  --color-base-300: oklch(23% 0.008 270);
-  --color-base-content: oklch(95% 0.005 270);
-  --color-primary: oklch(63% 0.22 25);
-  --color-primary-content: oklch(98% 0 0);
-  --color-secondary: oklch(95% 0.005 270);
-  --color-secondary-content: oklch(15% 0.006 270);
-  --color-accent: oklch(63% 0.22 25);
-  --color-accent-content: oklch(98% 0 0);
-  --color-neutral: oklch(95% 0.005 270);
-  --color-neutral-content: oklch(15% 0.006 270);
-  --radius-box: 1rem;
-  --radius-field: 2rem;
+  /* Inspired by auspham.dev dark tokens */
+  --color-base-100: #131313;
+  --color-base-200: #1a1a1a;
+  --color-base-300: #2a2a2a;
+  --color-base-content: #ffffff;
+  --color-primary: #ffb3b1;
+  --color-primary-content: #131313;
+  --color-secondary: #ffffff;
+  --color-secondary-content: #131313;
+  --color-accent: #ffb3b1;
+  --color-accent-content: #131313;
+  --color-neutral: #ffffff;
+  --color-neutral-content: #131313;
+  --radius-box: 0.25rem;
+  --radius-field: 0.25rem;
 }
 
 @theme {
-  --font-display: "Space Grotesk", sans-serif;
-  --font-body: "Inter", sans-serif;
+  --font-display: "Montserrat", sans-serif;
+  --font-body: "JetBrains Mono", monospace;
   --font-mono: "JetBrains Mono", monospace;
 }
 
@@ -122,18 +124,19 @@ body {
     display: inline-flex;
     align-items: center;
     gap: 0.75rem;
-    background: var(--color-primary);
-    color: var(--color-primary-content);
+    background: var(--color-base-content);
+    color: var(--color-base-100);
     padding: 1rem 2rem;
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: 0.2em;
     text-transform: uppercase;
-    transition: gap 0.3s ease, background-color 0.3s ease, transform 0.15s ease;
+    transition: gap 0.3s ease, background-color 0.3s ease, color 0.3s ease, transform 0.15s ease;
   }
   .hero-btn-primary:hover {
     gap: 1.25rem;
-    background: color-mix(in oklch, var(--color-primary) 85%, var(--color-accent));
+    background: var(--color-primary);
+    color: var(--color-primary-content);
   }
   .hero-btn-primary:active {
     transform: scale(0.98);
@@ -184,7 +187,7 @@ body {
     position: absolute;
     inset: 0;
     z-index: 10;
-    border: 1px solid color-mix(in oklch, var(--color-primary) 35%, transparent);
+    border: 1px solid var(--color-primary);
   }
   .hero-photo-badge {
     position: absolute;
