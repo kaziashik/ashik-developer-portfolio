@@ -4,24 +4,29 @@ import { useQuery } from '@tanstack/react-query'
 import { FiArrowLeft, FiArrowUpRight, FiGithub, FiFileText } from 'react-icons/fi'
 import useAxios from '../hooks/useAxios'
 import { getProjectById } from '../api/projectsApi'
+import { getStaticProjectById } from '../data/featuredProjects'
 import { optimizeImageUrl } from '../utils/imageUrl'
 import PageLoader from '../ui/skeletons/PageLoader'
 
 export default function ProjectDetails() {
   const { id } = useParams()
   const axiosPublic = useAxios()
+  const staticProject = getStaticProjectById(id)
 
-  const { data: project, isLoading, isError } = useQuery({
+  const { data: apiProject, isLoading, isError } = useQuery({
     queryKey: ['project', id],
     queryFn: () => getProjectById(axiosPublic, id),
     staleTime: 5 * 60 * 1000,
+    enabled: !staticProject,
   })
 
-  if (isLoading) {
+  const project = staticProject || apiProject
+
+  if (!staticProject && isLoading) {
     return <PageLoader />
   }
 
-  if (isError || !project) {
+  if ((!staticProject && isError) || !project) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4 px-6">
         <p className="text-base-content/60">Project not found.</p>

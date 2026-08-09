@@ -10,6 +10,7 @@ import useAxios from '../../hooks/useAxios'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
 import { getProjects, getAllProjectsForAdmin, deleteProject, updateProject } from '../../api/projectsApi'
 import { useProfileData } from '../../contexts/ProfileContext'
+import { mergeFeaturedProjects } from '../../data/featuredProjects'
 
 export default function Projects() {
   const { isAdmin } = useAuth()
@@ -27,9 +28,13 @@ export default function Projects() {
       const data = isAdmin
         ? await getAllProjectsForAdmin(axiosSecure, { visibility: 'job' })
         : await getProjects(axiosPublic, { visibility: 'job' })
-      const sorted = [...(data || [])].sort(
-        (a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      )
+      const merged = mergeFeaturedProjects(data || [])
+      const sorted = [...merged].sort((a, b) => {
+        // Featured ZapShift / flagged items first, then newest
+        if (a.featured && !b.featured) return -1
+        if (!a.featured && b.featured) return 1
+        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+      })
       setProjects(sorted)
     } catch (err) {
       console.error('Failed to load projects:', err.message)
@@ -102,6 +107,9 @@ export default function Projects() {
                     <img src={p.imageUrls[0]} alt={p.title} className="w-full h-full object-cover" />
                   ) : (
                     'project preview'
+                  )}
+                  {p.featured && !hidden && (
+                    <span className="absolute top-2 left-2 badge badge-primary badge-sm eyebrow">Featured</span>
                   )}
                   {isAdmin && hidden && (
                     <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow">Hidden from visitors</span>
