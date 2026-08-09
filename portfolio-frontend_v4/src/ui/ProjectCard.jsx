@@ -21,10 +21,16 @@ export default function ProjectCard({
     <motion.article
       variants={fadeUp}
       whileHover={{ y: featured ? -4 : -6 }}
-      className={`group card bg-base-100 border overflow-hidden transition-all hover:shadow-lg ${
+      className={`group relative card bg-base-100 border overflow-hidden transition-all hover:shadow-lg cursor-pointer ${
         hidden ? 'border-warning/50' : 'border-base-300 hover:border-primary/40'
       } ${featured ? 'md:flex md:flex-row' : ''}`}
     >
+      <Link
+        to={`/projects/${project._id}`}
+        className="absolute inset-0 z-[1]"
+        aria-label={`View ${project.title} details`}
+      />
+
       <div
         className={`bg-base-200 flex items-center justify-center text-base-content/40 text-xs eyebrow overflow-hidden relative shrink-0 ${
           featured ? 'md:w-[46%] aspect-video md:aspect-auto md:min-h-[240px]' : 'aspect-video'
@@ -42,15 +48,15 @@ export default function ProjectCard({
           <span className="px-4 text-center">Add a screenshot in admin</span>
         )}
         {featured && !hidden && (
-          <span className="absolute top-3 left-3 badge badge-primary badge-sm eyebrow">Featured</span>
+          <span className="absolute top-3 left-3 badge badge-primary badge-sm eyebrow z-[2]">Featured</span>
         )}
         {isAdmin && hidden && (
-          <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow">Hidden</span>
+          <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow z-[2]">Hidden</span>
         )}
       </div>
 
       <div className={`card-body flex flex-col ${featured ? 'md:w-[54%]' : ''} p-5 ${featured ? 'md:p-6' : ''}`}>
-        <h3 className={`font-display font-semibold text-base-content mb-2 ${featured ? 'text-xl' : 'text-base'}`}>
+        <h3 className={`font-display font-semibold text-base-content mb-2 group-hover:text-primary transition-colors ${featured ? 'text-xl' : 'text-base'}`}>
           {project.title}
         </h3>
         <p className={`text-base-content/70 mb-4 ${featured ? 'text-sm md:text-base line-clamp-3' : 'text-sm line-clamp-2'}`}>
@@ -64,7 +70,7 @@ export default function ProjectCard({
           ))}
         </div>
 
-        <div className="flex flex-wrap gap-2 mt-auto">
+        <div className="relative z-[2] flex flex-wrap gap-2 mt-auto">
           {project.links?.live && (
             <a href={project.links.live} target="_blank" rel="noreferrer" className="btn btn-xs btn-outline gap-1">
               <FiArrowUpRight className="w-3 h-3" /> Live
@@ -75,13 +81,13 @@ export default function ProjectCard({
               <FiGithub className="w-3 h-3" /> Code
             </a>
           )}
-          <Link to={`/projects/${project._id}`} className="btn btn-xs btn-primary gap-1">
+          <span className="btn btn-xs btn-primary gap-1 pointer-events-none">
             Details
-          </Link>
+          </span>
         </div>
 
         {isAdmin && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-base-300">
+          <div className="relative z-[2] flex flex-wrap gap-2 mt-3 pt-3 border-t border-base-300">
             <button onClick={() => onEdit(project)} className="btn btn-ghost btn-xs gap-1">
               <FiEdit2 className="w-3 h-3" /> Edit
             </button>

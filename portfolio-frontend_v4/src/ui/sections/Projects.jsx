@@ -1,52 +1,50 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router'
 import Swal from 'sweetalert2'
 import { FiArrowUpRight, FiGithub, FiPlus, FiEdit2, FiTrash2, FiEye, FiEyeOff } from 'react-icons/fi'
 import AnimatedSection, { staggerContainer, fadeUp } from '../AnimatedSection'
 import ProjectFormModal from '../modals/ProjectFormModal'
+import { ProjectGridSkeleton } from '../skeletons/SectionCardSkeleton'
 import useAuth from '../../hooks/useAuth'
-import useAxios from '../../hooks/useAxios'
 import useAxiosSecure from '../../hooks/useAxiosSecure'
-import { getProjects, getAllProjectsForAdmin, deleteProject, updateProject } from '../../api/projectsApi'
-import { useProfileData } from '../../contexts/ProfileContext'
+import { deleteProject, updateProject } from '../../api/projectsApi'
+import { usePortfolio } from '../../contexts/PortfolioProvider'
+import { useProjectsData } from '../../hooks/useSectionData'
 import { mergeFeaturedProjects } from '../../data/featuredProjects'
+
+function sortProjects(merged) {
+  const featuredOrder = ['rentnest', 'zapshift', 'gearup']
+  return [...merged].sort((a, b) => {
+    if (a.featured && !b.featured) return -1
+    if (!a.featured && b.featured) return 1
+    const ai = featuredOrder.indexOf(String(a._id))
+    const bi = featuredOrder.indexOf(String(b._id))
+    if (ai !== -1 || bi !== -1) {
+      if (ai === -1) return 1
+      if (bi === -1) return -1
+      return ai - bi
+    }
+    return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
+  })
+}
 
 export default function Projects() {
   const { isAdmin } = useAuth()
-  const axiosPublic = useAxios()
   const axiosSecure = useAxiosSecure()
-  const { profile } = useProfileData()
-
-  const [projects, setProjects] = useState([])
-  const [loading, setLoading] = useState(true)
+  const { profile, refetchPortfolio, invalidatePortfolio } = usePortfolio()
+  const { data: apiProjects, loading, refetch: refetchProjects } = useProjectsData('job')
   const [modalState, setModalState] = useState(null) // null | 'add' | project object
 
-  const loadProjects = useCallback(async () => {
-    setLoading(true)
-    try {
-      const data = isAdmin
-        ? await getAllProjectsForAdmin(axiosSecure, { visibility: 'job' })
-        : await getProjects(axiosPublic, { visibility: 'job' })
-      const merged = mergeFeaturedProjects(data || [])
-      const sorted = [...merged].sort((a, b) => {
-        // Featured ZapShift / flagged items first, then newest
-        if (a.featured && !b.featured) return -1
-        if (!a.featured && b.featured) return 1
-        return new Date(b.createdAt || 0) - new Date(a.createdAt || 0)
-      })
-      setProjects(sorted)
-    } catch (err) {
-      console.error('Failed to load projects:', err.message)
-    } finally {
-      setLoading(false)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAdmin])
+  const projects = useMemo(
+    () => sortProjects(mergeFeaturedProjects(apiProjects || [])),
+    [apiProjects]
+  )
 
-  useEffect(() => {
-    loadProjects()
-  }, [loadProjects])
+  const refreshAll = async () => {
+    await Promise.all([refetchPortfolio(), refetchProjects()])
+    invalidatePortfolio()
+  }
 
   const handleDelete = async (project) => {
     const result = await Swal.fire({
@@ -62,7 +60,7 @@ export default function Projects() {
     try {
       await deleteProject(axiosSecure, project._id)
       await Swal.fire({ icon: 'success', title: 'Project deleted', timer: 1200, showConfirmButton: false })
-      loadProjects()
+      refreshAll()
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Delete failed', text: err?.response?.data?.message || err.message })
     }
@@ -71,7 +69,7 @@ export default function Projects() {
   const handleToggleVisible = async (project) => {
     try {
       await updateProject(axiosSecure, project._id, { isPublic: !(project.isPublic !== false) })
-      loadProjects()
+      refreshAll()
     } catch (err) {
       Swal.fire({ icon: 'error', title: 'Could not update visibility', text: err?.response?.data?.message || err.message })
     }
@@ -93,30 +91,45 @@ export default function Projects() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-16"><span className="loading loading-spinner loading-lg text-primary" /></div>
+        <ProjectGridSkeleton cards={3} />
       ) : (
-        <motion.div variants={staggerContainer} initial="hidden" whileInView="show" viewport={{ once: true, amount: 0.1 }}
-          className="grid md:grid-cols-3 gap-5">
+        <motion.div
+          key={`projects-${projects.map((p) => p._id).join('-') || 'empty'}`}
+          variants={staggerContainer}
+          initial="hidden"
+          animate="show"
+          className="grid md:grid-cols-3 gap-5"
+        >
           {projects.map((p) => {
             const hidden = p.isPublic === false
             return (
-              <motion.div key={p._id} variants={fadeUp} whileHover={{ y: -6 }}
-                className={`group card bg-base-100 border overflow-hidden transition-shadow hover:shadow-lg ${hidden ? 'border-warning/50' : 'border-base-300 hover:border-primary/40'}`}>
+              <motion.div
+                key={p._id}
+                variants={fadeUp}
+                whileHover={{ y: -6 }}
+                className={`group relative card bg-base-100 border overflow-hidden transition-shadow hover:shadow-lg cursor-pointer ${hidden ? 'border-warning/50' : 'border-base-300 hover:border-primary/40'}`}
+              >
+                <Link
+                  to={`/projects/${p._id}`}
+                  className="absolute inset-0 z-[1]"
+                  aria-label={`View ${p.title} details`}
+                />
+
                 <div className="aspect-video bg-base-200 flex items-center justify-center text-base-content/40 text-xs eyebrow overflow-hidden relative">
                   {p.imageUrls?.[0] ? (
-                    <img src={p.imageUrls[0]} alt={p.title} className="w-full h-full object-cover" />
+                    <img src={p.imageUrls[0]} alt={p.title} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-[1.02]" />
                   ) : (
                     'project preview'
                   )}
                   {p.featured && !hidden && (
-                    <span className="absolute top-2 left-2 badge badge-primary badge-sm eyebrow">Featured</span>
+                    <span className="absolute top-2 left-2 badge badge-primary badge-sm eyebrow z-[2]">Featured</span>
                   )}
                   {isAdmin && hidden && (
-                    <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow">Hidden from visitors</span>
+                    <span className="absolute top-2 left-2 badge badge-warning badge-sm eyebrow z-[2]">Hidden from visitors</span>
                   )}
                 </div>
                 <div className="card-body p-5">
-                  <h3 className="font-display font-semibold text-lg text-base-content mb-2">{p.title}</h3>
+                  <h3 className="font-display font-semibold text-lg text-base-content mb-2 group-hover:text-primary transition-colors">{p.title}</h3>
                   <p className="text-base text-base-content/70 mb-4 line-clamp-3">{p.details?.[0]}</p>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {(p.toolsUsed || []).map((tag) => (
@@ -124,7 +137,7 @@ export default function Projects() {
                     ))}
                   </div>
 
-                  <div className="flex flex-wrap gap-2 mt-auto">
+                  <div className="relative z-[2] flex flex-wrap gap-2 mt-auto">
                     {p.links?.live && (
                       <a href={p.links.live} target="_blank" rel="noreferrer" className="btn btn-xs btn-outline gap-1">
                         <FiArrowUpRight className="w-3 h-3" /> Live Demo
@@ -135,13 +148,13 @@ export default function Projects() {
                         <FiGithub className="w-3 h-3" /> GitHub
                       </a>
                     )}
-                    <Link to={`/projects/${p._id}`} className="btn btn-xs btn-primary gap-1">
+                    <span className="btn btn-xs btn-primary gap-1 pointer-events-none">
                       Overview
-                    </Link>
+                    </span>
                   </div>
 
                   {isAdmin && (
-                    <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-base-300">
+                    <div className="relative z-[2] flex flex-wrap gap-2 mt-3 pt-3 border-t border-base-300">
                       <button onClick={() => setModalState(p)} className="btn btn-xs btn-ghost gap-1">
                         <FiEdit2 className="w-3 h-3" /> Update
                       </button>
@@ -178,7 +191,7 @@ export default function Projects() {
         <ProjectFormModal
           project={modalState === 'add' ? null : modalState}
           onClose={() => setModalState(null)}
-          onSaved={loadProjects}
+          onSaved={refreshAll}
         />
       )}
     </AnimatedSection>

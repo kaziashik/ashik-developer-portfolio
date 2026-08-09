@@ -1,5 +1,5 @@
 export const getEducation = (axiosInstance, params = {}) =>
-  axiosInstance.get('/api/education', { params }).then((res) => res.data.data)
+  axiosInstance.get('/api/education', { params }).then((res) => res.data?.data ?? [])
 
 // Admin-only: returns every education entry regardless of isPublic.
 // Requires the backend addition documented in BACKEND_ADDITIONS_REQUIRED.md

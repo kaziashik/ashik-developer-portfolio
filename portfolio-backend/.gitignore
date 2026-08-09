@@ -9,3 +9,4 @@ npm-debug.log*
 .vercel
 .ashikportfolio-auth-firebase-adminsdk-service-account.json
 .firebaseAdmin.js
+.env*

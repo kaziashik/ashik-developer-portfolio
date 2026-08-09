@@ -51,7 +51,8 @@
 
 html {
   scroll-behavior: smooth;
-  font-size: 106.25%;
+  /* ~80% overall UI scale (was 106.25% — felt oversized) */
+  font-size: 80%;
 }
 
 section[id],

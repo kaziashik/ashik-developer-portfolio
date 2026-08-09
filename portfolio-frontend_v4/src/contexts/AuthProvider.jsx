@@ -1,31 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { useLocation } from 'react-router'
 import axios from 'axios'
 import AuthContext from './AuthContext'
 import { API_BASE_URL } from '../config/env'
-
-const guestAuthValue = {
-  firebaseUser: null,
-  admin: null,
-  isAdmin: false,
-  accessToken: null,
-  tokenRef: { current: null },
-  authReady: true,
-  loading: false,
-  loginWithEmail: async () => {
-    throw new Error('Authentication is still loading. Please try again.')
-  },
-  loginWithGoogle: async () => {
-    throw new Error('Authentication is still loading. Please try again.')
-  },
-  forgotPassword: async () => {
-    throw new Error('Authentication is still loading. Please try again.')
-  },
-  logout: async () => {},
-  refreshAccessToken: async () => {
-    throw new Error('Not authenticated')
-  },
-}
 
 function AuthProviderInner({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null)
@@ -155,28 +131,7 @@ function AuthProviderInner({ children }) {
 }
 
 export default function AuthProvider({ children }) {
-  const location = useLocation()
-  const isLoginRoute = location.pathname === '/login'
-  const [initialized, setInitialized] = useState(isLoginRoute)
-
-  useEffect(() => {
-    if (isLoginRoute) {
-      setInitialized(true)
-      return
-    }
-
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(() => setInitialized(true), { timeout: 2500 })
-      return () => window.cancelIdleCallback(id)
-    }
-
-    const timer = setTimeout(() => setInitialized(true), 2000)
-    return () => clearTimeout(timer)
-  }, [isLoginRoute])
-
-  if (!initialized) {
-    return <AuthContext.Provider value={guestAuthValue}>{children}</AuthContext.Provider>
-  }
-
+  // Keep a single provider tree so PortfolioProvider / sections do not remount
+  // (remounting was wiping Experience/Education before data could paint).
   return <AuthProviderInner>{children}</AuthProviderInner>
 }
