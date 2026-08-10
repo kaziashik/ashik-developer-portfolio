@@ -8,11 +8,20 @@
         try {
           localStorage.removeItem('theme')
           localStorage.removeItem('portfolio-theme')
-          var t = localStorage.getItem('portfolio-theme-v2')
-          if (t !== 'lightMode' && t !== 'darkMode') t = 'lightMode'
+          localStorage.removeItem('portfolio-theme-v2')
+          var pref = localStorage.getItem('portfolio-theme-v3')
+          var systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          var t = pref === 'lightMode' || pref === 'darkMode'
+            ? pref
+            : systemDark
+              ? 'darkMode'
+              : 'lightMode'
           document.documentElement.setAttribute('data-theme', t)
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'lightMode')
+          document.documentElement.setAttribute(
+            'data-theme',
+            window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkMode' : 'lightMode'
+          )
         }
       })()
     </script>

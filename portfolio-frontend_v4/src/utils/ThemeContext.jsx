@@ -2,38 +2,78 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext(null)
 
-// Bump key when default theme changes so old auto-saved values don't stick.
-const THEME_KEY = 'portfolio-theme-v2'
-const DEFAULT_THEME = 'lightMode'
+// v3: default follows browser/OS preference unless user toggles.
+const THEME_KEY = 'portfolio-theme-v3'
+const DEFAULT_PREFERENCE = 'system'
 
-function readStoredTheme() {
-  if (typeof window === 'undefined') return DEFAULT_THEME
+function getSystemTheme() {
+  if (typeof window === 'undefined') return 'lightMode'
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkMode' : 'lightMode'
+}
+
+function readStoredPreference() {
+  if (typeof window === 'undefined') return DEFAULT_PREFERENCE
   try {
     const stored = localStorage.getItem(THEME_KEY)
-    if (stored === 'lightMode' || stored === 'darkMode') return stored
+    if (stored === 'system' || stored === 'lightMode' || stored === 'darkMode') return stored
   } catch {
     // ignore
   }
-  return DEFAULT_THEME
+  return DEFAULT_PREFERENCE
+}
+
+function resolveTheme(preference) {
+  return preference === 'system' ? getSystemTheme() : preference
 }
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(readStoredTheme)
+  const [preference, setPreference] = useState(readStoredPreference)
+  const [theme, setTheme] = useState(() => resolveTheme(readStoredPreference()))
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme)
+    const apply = (nextPreference) => {
+      const resolved = resolveTheme(nextPreference)
+      setTheme(resolved)
+      document.documentElement.setAttribute('data-theme', resolved)
+    }
+
+    apply(preference)
+
     try {
-      localStorage.setItem(THEME_KEY, theme)
+      localStorage.setItem(THEME_KEY, preference)
       localStorage.removeItem('theme')
       localStorage.removeItem('portfolio-theme')
+      localStorage.removeItem('portfolio-theme-v2')
     } catch {
       // ignore
     }
-  }, [theme])
 
-  const toggleTheme = () => setTheme((t) => (t === 'lightMode' ? 'darkMode' : 'lightMode'))
+    if (preference !== 'system') return undefined
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>
+    const media = window.matchMedia('(prefers-color-scheme: dark)')
+    const onChange = () => apply('system')
+
+    if (media.addEventListener) media.addEventListener('change', onChange)
+    else media.addListener(onChange)
+
+    return () => {
+      if (media.removeEventListener) media.removeEventListener('change', onChange)
+      else media.removeListener(onChange)
+    }
+  }, [preference])
+
+  const toggleTheme = () => {
+    setPreference((current) => {
+      const resolved = resolveTheme(current)
+      return resolved === 'darkMode' ? 'lightMode' : 'darkMode'
+    })
+  }
+
+  return (
+    <ThemeContext.Provider value={{ theme, preference, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  )
 }
 
 export function useTheme() {
