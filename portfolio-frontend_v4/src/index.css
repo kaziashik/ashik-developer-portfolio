@@ -3,7 +3,7 @@
 
 @plugin "daisyui/theme" {
   name: "lightMode";
-  default: false;
+  default: true;
   prefersdark: false;
   color-scheme: light;
   /* Inspired by auspham.dev light tokens */
@@ -25,7 +25,7 @@
 
 @plugin "daisyui/theme" {
   name: "darkMode";
-  default: true;
+  default: false;
   prefersdark: true;
   color-scheme: dark;
   /* Inspired by auspham.dev dark tokens */

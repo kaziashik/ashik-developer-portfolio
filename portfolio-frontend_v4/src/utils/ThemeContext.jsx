@@ -2,9 +2,9 @@ import { createContext, useContext, useEffect, useState } from 'react'
 
 const ThemeContext = createContext(null)
 
-// New key so older "theme=lightMode" saves don't override the dark default.
-const THEME_KEY = 'portfolio-theme'
-const DEFAULT_THEME = 'darkMode'
+// Bump key when default theme changes so old auto-saved values don't stick.
+const THEME_KEY = 'portfolio-theme-v2'
+const DEFAULT_THEME = 'lightMode'
 
 function readStoredTheme() {
   if (typeof window === 'undefined') return DEFAULT_THEME
@@ -24,8 +24,8 @@ export function ThemeProvider({ children }) {
     document.documentElement.setAttribute('data-theme', theme)
     try {
       localStorage.setItem(THEME_KEY, theme)
-      // Drop legacy key so it can't force light mode again.
       localStorage.removeItem('theme')
+      localStorage.removeItem('portfolio-theme')
     } catch {
       // ignore
     }

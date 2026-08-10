@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" data-theme="darkMode">
+<html lang="en" data-theme="lightMode">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,11 +7,12 @@
       (function () {
         try {
           localStorage.removeItem('theme')
-          var t = localStorage.getItem('portfolio-theme')
-          if (t !== 'lightMode' && t !== 'darkMode') t = 'darkMode'
+          localStorage.removeItem('portfolio-theme')
+          var t = localStorage.getItem('portfolio-theme-v2')
+          if (t !== 'lightMode' && t !== 'darkMode') t = 'lightMode'
           document.documentElement.setAttribute('data-theme', t)
         } catch (e) {
-          document.documentElement.setAttribute('data-theme', 'darkMode')
+          document.documentElement.setAttribute('data-theme', 'lightMode')
         }
       })()
     </script>
