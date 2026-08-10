@@ -54,7 +54,7 @@ export default function Navbar() {
       )}
     >
       <div className="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-        <Link to="/" className="font-display font-bold text-xl text-base-content">
+        <Link to="/login" className="font-display font-bold text-xl text-base-content">
           Kazi Ashik <span className="text-primary">.</span>
         </Link>
 
