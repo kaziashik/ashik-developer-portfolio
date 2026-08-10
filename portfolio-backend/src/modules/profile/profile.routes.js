@@ -7,7 +7,8 @@ import { profileController } from "./profile.controller.js";
 const router = Router();
 
 router.get("/", publicCache, profileController.getProfile);
-router.get("/resume", publicCache, profileController.getResume);
+// No publicCache here — resume updates must show immediately after admin upload.
+router.get("/resume", profileController.getResume);
 router.post("/resume", auth(), uploadResume, profileController.uploadResume);
 router.put("/", auth(), profileController.updateProfile);
 

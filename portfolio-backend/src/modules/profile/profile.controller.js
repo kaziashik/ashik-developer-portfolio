@@ -8,12 +8,21 @@ const getProfile = catchAsync(async (req, res) => {
   sendResponse(res, { statusCode: 200, message: "Profile retrieved", data: profile });
 });
 
+const PUBLIC_RESUME_FILENAME = "Ashik_Resume.pdf";
+
+function contentDisposition(filename, type = "inline") {
+  const safe = String(filename || PUBLIC_RESUME_FILENAME).replace(/"/g, "");
+  const encoded = encodeURIComponent(safe);
+  return `${type}; filename="${safe}"; filename*=UTF-8''${encoded}`;
+}
+
 const getResume = catchAsync(async (req, res) => {
   const { buffer, contentType } = await profileService.streamResume();
   res.set({
     "Content-Type": contentType,
-    "Content-Disposition": 'inline; filename="CV.pdf"',
-    "Cache-Control": "public, max-age=3600, stale-while-revalidate=86400",
+    "Content-Disposition": contentDisposition(PUBLIC_RESUME_FILENAME, "inline"),
+    "Cache-Control": "no-store",
+    "Access-Control-Expose-Headers": "Content-Disposition",
   });
   res.send(buffer);
 });
@@ -23,8 +32,12 @@ const uploadResume = catchAsync(async (req, res) => {
     throw new AppError("PDF file is required", 400);
   }
 
-  await profileService.saveResume(req.file.buffer, req.file.originalname || "cv.pdf");
-  sendResponse(res, { statusCode: 200, message: "CV uploaded successfully", data: { ok: true } });
+  const saved = await profileService.saveResume(req.file.buffer, PUBLIC_RESUME_FILENAME);
+  sendResponse(res, {
+    statusCode: 200,
+    message: "Resume uploaded successfully",
+    data: { ok: true, filename: saved.filename },
+  });
 });
 
 const updateProfile = catchAsync(async (req, res) => {

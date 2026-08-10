@@ -23,6 +23,7 @@ const profileSchema = new mongoose.Schema(
     profileImageUrl: { type: String, default: "" },
     resumePdfUrl: { type: String, default: "" },
     resumeFileId: { type: String, default: "" },
+    resumeFileName: { type: String, default: "" },
     links: {
       linkedin: { type: String, default: "" },
       googleScholar: { type: String, default: "" },

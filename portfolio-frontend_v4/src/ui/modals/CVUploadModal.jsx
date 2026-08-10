@@ -28,23 +28,30 @@ export default function CVUploadModal({ onClose }) {
       const formData = new FormData()
       formData.append('resume', file)
 
-      await axiosSecure.post('/api/profile/resume', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
+      // Let the browser set multipart boundary — do not force Content-Type.
+      await axiosSecure.post('/api/profile/resume', formData)
       invalidatePortfolio()
 
       await Swal.fire({
         icon: 'success',
-        title: 'CV updated successfully.',
-        timer: 1600,
+        title: 'Resume updated successfully.',
+        text: 'Open View Resume to confirm the new file.',
+        timer: 2000,
         showConfirmButton: false,
       })
       onClose()
     } catch (err) {
+      const status = err.response?.status
+      const message =
+        status === 401
+          ? 'Please log in as admin first, then try again.'
+          : status === 413
+            ? 'File is too large. Max size is about 4.5 MB on the live server.'
+            : err.response?.data?.message || err.message || 'Please try again.'
       Swal.fire({
         icon: 'error',
         title: 'Upload failed',
-        text: err.response?.data?.message || err.message || 'Please try again.',
+        text: message,
       })
     } finally {
       setUploading(false)
@@ -52,12 +59,15 @@ export default function CVUploadModal({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 z-[60] bg-neutral/60 flex items-center justify-center px-6" onClick={onClose}>
-      <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm rounded-2xl border border-base-300 bg-base-100 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-display font-semibold text-lg">Update CV</h3>
-          <button onClick={onClose} className="btn btn-ghost btn-sm btn-circle">
-            <FiX className="w-4 h-4" />
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-neutral/60 px-6" onClick={onClose}>
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm rounded-2xl border border-base-300 bg-base-100 p-6"
+      >
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="font-display text-lg font-semibold">Update Resume</h3>
+          <button type="button" onClick={onClose} className="btn btn-ghost btn-sm btn-circle" aria-label="Close">
+            <FiX className="h-4 w-4" />
           </button>
         </div>
 
@@ -68,8 +78,11 @@ export default function CVUploadModal({ onClose }) {
             onChange={handleFileChange}
             className="file-input file-input-bordered w-full"
           />
-          <button type="submit" disabled={!file || uploading} className="btn btn-primary rounded-full gap-2">
-            <FiUpload className="w-4 h-4" />
+          <p className="font-mono text-[11px] text-base-content/45">
+            Visitors always see and download this as <span className="text-base-content/70">Ashik_Resume.pdf</span>
+          </p>
+          <button type="submit" disabled={!file || uploading} className="btn btn-primary gap-2 rounded-full">
+            <FiUpload className="h-4 w-4" />
             {uploading ? 'Uploading…' : 'Upload & Save'}
           </button>
         </form>

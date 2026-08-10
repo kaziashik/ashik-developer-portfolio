@@ -61,3 +61,17 @@ firebase deploy --only hosting --project ashikportfolio-auth
 ```
 
 Make sure production env values (especially `VITE_API_BASE_URL` pointing at your deployed backend) are set before building — Vite bakes `VITE_*` vars into the build at build time, not runtime.
+
+## 6. E2E tests (Playwright)
+
+```bash
+npm run build
+npm run test:e2e
+npm run test:e2e:report
+```
+
+By default tests run against local `vite preview`. To hit production:
+
+```bash
+E2E_BASE_URL=https://ashikportfolio-auth.web.app npm run test:e2e
+```

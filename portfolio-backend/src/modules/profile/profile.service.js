@@ -94,6 +94,22 @@ const getProfile = async () => {
     profile.links.linkedin = DEFAULT_SOCIAL_LINKS.linkedin;
     changed = true;
   }
+
+  // Keep the public resume label/download name in sync with GridFS filename.
+  if (!profile.resumeFileName?.trim() && profile.resumeFileId) {
+    try {
+      const bucket = getResumeBucket();
+      const files = await bucket.find({ _id: new ObjectId(profile.resumeFileId) }).toArray();
+      const storedName = files[0]?.filename?.trim();
+      if (storedName) {
+        profile.resumeFileName = storedName;
+        changed = true;
+      }
+    } catch {
+      // ignore sync errors; resume streaming still works
+    }
+  }
+
   if (changed) await profile.save();
 
   return profile.toObject();
@@ -115,6 +131,7 @@ const streamResume = async () => {
     return {
       buffer,
       contentType: files[0].contentType || "application/pdf",
+      filename: profile.resumeFileName || files[0].filename || "Resume.pdf",
     };
   }
 
@@ -123,12 +140,19 @@ const streamResume = async () => {
     throw new AppError("No CV uploaded yet", 404);
   }
 
-  return fetchResumeFile(url);
+  const fetched = await fetchResumeFile(url);
+  return {
+    ...fetched,
+    filename: profile.resumeFileName || "Resume.pdf",
+  };
 };
 
-const saveResume = async (buffer, filename = "cv.pdf") => {
+const saveResume = async (buffer, filename = "Resume.pdf") => {
   const bucket = getResumeBucket();
   const profile = await Profile.findOne();
+  const safeName = String(filename || "Resume.pdf")
+    .replace(/[/\\?%*:|"<>]/g, "-")
+    .trim() || "Resume.pdf";
 
   if (profile?.resumeFileId) {
     try {
@@ -139,7 +163,7 @@ const saveResume = async (buffer, filename = "cv.pdf") => {
   }
 
   const fileId = await new Promise((resolve, reject) => {
-    const uploadStream = bucket.openUploadStream(filename, {
+    const uploadStream = bucket.openUploadStream(safeName, {
       contentType: "application/pdf",
     });
 
@@ -150,11 +174,15 @@ const saveResume = async (buffer, filename = "cv.pdf") => {
 
   await Profile.findOneAndUpdate(
     {},
-    { resumeFileId: fileId.toString(), resumePdfUrl: "" },
+    {
+      resumeFileId: fileId.toString(),
+      resumePdfUrl: "",
+      resumeFileName: safeName,
+    },
     { upsert: true, new: true }
   );
 
-  return fileId.toString();
+  return { fileId: fileId.toString(), filename: safeName };
 };
 
 const updateProfile = async (payload) => {

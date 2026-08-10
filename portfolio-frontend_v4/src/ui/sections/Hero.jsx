@@ -113,7 +113,7 @@ export default function Hero() {
               onClick={() => setCvViewerOpen(true)}
               className="hero-btn-primary group"
             >
-              View CV
+              View Resume
               <FiArrowRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-1" />
             </button>
             <Link to="/contact" className="hero-btn-outline">
@@ -125,7 +125,7 @@ export default function Hero() {
                 onClick={() => setCvUploadOpen(true)}
                 className="btn btn-ghost btn-sm rounded-none gap-2 eyebrow text-[11px] uppercase tracking-[0.15em]"
               >
-                <FiUploadCloud className="w-3.5 h-3.5" /> Update CV
+                <FiUploadCloud className="w-3.5 h-3.5" /> Update Resume
               </button>
             )}
           </motion.div>
